@@ -1,0 +1,43 @@
+Question 1:
+The convergence method that I chose I hesistate to say it's the best method. Initially I used np.sum for the array that contains the "2d matrix" and I also used np.sum on the previous 2d matrix from t-1.
+I found that np.sum(new) - np.sum(old) on a float32 type was going to sum each element of the array and then take the totals of each array and find the difference. The problem is that it could lead to errors where the arrays sum up to be the same values but the element in each column and row are different. I was using float32's, I thought the likeliness of having two arrays sum to be the same, but have different order, was very low.
+	ar1 = [[0,1]] and ar2 =[[1,0] are the same sums(1-1=0) but arr3= [[1.1111111,0]] arr4 = [0,1.1111112] are not the same. 
+	They are float64 and I converted them to type float32(to avoid any problems with floating point numbers on a 32-bit pc). 
+	The problem is float32 changes the values of the sum to zero(due to precision limitations) 
+
+	np.sum(arr3)-np.sum(arr4) = -3.000000026176508e-09
+	np.sum(arr3, dtype =np.float32)-np.sum(arr4,dtype = np.float32) = 0.0
+    (ex. -793.3285 -  -793.3285)I kept tract of the change in states DELTAS.    
+
+It isn't the most optimized policy so I had to keep going although I would think that stopping here might be useful because convergence will happen soon(within numiterations*3 according to my results). The deltas or change from one interation to another was a good way to be more precise and accurate for the optimal policy convergence. When looking at the data and I could see the deltas are about to converge to 0. The deltas were found by keeping track of the change of every element for every element from iteration t-1 to t, instead of comparing the sums of the elements like I initially tried. I found the deltas converged at iteration 1200 and the original method "showed" convergence at iteration 422.
+I actually found the float32 to be fairly accurate in telling when convergence would happen(on first appearance of 0 from float32, multiply iterations by 3 and its close to 1200 which is the real convergence). Policy iteration is slower for large number of states and it takes more iterations to converge. The policy iteration directly updates the policy. I think in the real world given the more accurate and longer time that this model works better than value iteration for infinite actions. I included my notes from python below that also explain it.
+
+
+# IMPORTANT
+    # np.sum is(not true anymore I changed it to deltas) used because float values became so small the probability that it was diverging was already happening. sum all values and subtract total difference causes some rounding.
+    # deltas(difference between last q state and this q state for all rows and columns) was not used because values were very small but deltas will prove convergence.
+    # The way I do it leaves possiblity of non-convergence but it's not probable : storage =(np.sum(valueMap, dtype = np.float32))-( np.sum(copyValueMap, dtype = np.float32))
+    # In example below the function checkConvergence says that the true DELTAS being zero means there is confirmed convergence however 
+    # I found that I could notice convergence sooner by taking the sum of valueMap and copyValueMap as float32 then subtracting the difference. This leads to some rounding issues which is good
+    # compare  deltas[-1] at iteration 422 and 1200. Deltas at 422 are very small but not 0. 
+    # Notice iteration 422 and 1200 are rounding(converging) very slowly to the 0.000_  place. -34.33295828 vs. -34.33333333
+    # difference between sum of values of last iteration to this iteration(to test convergence) is 0. Stop iterating immediately sum of a - sum of b =  -793.3285 -  -793.3285 = 0.0 False
+    # in the above line we get a value of 0.0 from np.sum(array1 )-np.sum(array2) but we get False statement which means the change in last iteration to this was very small but not exactly 0 for every row and column BUT CLOSE ENOUGH
+    # We don't get the final iteration that it truly converges we just get an early estimation. 
+    """Iteration 422
+    [[  0.         -22.99986569 -34.33312708 -39.66642405 -41.66640961]
+     [-22.99986569 -30.66648508 -36.33311466 -38.99976269 -39.66642405]
+     [-34.33312708 -36.33311466 -37.33310834 -36.33311466 -34.33312708]
+     [-39.66642405 -38.99976269 -36.33311466 -30.66648508 -22.99986569]
+     [-41.66640961 -39.66642405 -34.33312708 -22.99986569   0.        ]]""" 
+    """Iteration 1200
+    [[  0.         -23.         -34.33333333 -39.66666667 -41.66666667]
+     [-23.         -30.66666667 -36.33333333 -39.         -39.66666667]
+     [-34.33333333 -36.33333333 -37.33333333 -36.33333333 -34.33333333]
+     [-39.66666667 -39.         -36.33333333 -30.66666667 -23.        ]
+     [-41.66666667 -39.66666667 -34.33333333 -23.           0.        ]]"""
+    # In my opinion I imagine it would be hard to prove that Iteration 422 doesn't guarantee convergence but I believe that everything must converge by the next iteration*3 and since we know deltas are 0 at 1200 this idea works.
+
+
+Question 2:
+The convergence method I chose was looking at the change in deltas, a lot can be explaiend from question 1 about why I did that. The deltas from one state to a past state allow us to see how much the matrix changed. The value iteration policy converged at iteration 4 or we confirmed convergence on iteration 5. All the deltas from k = 5 were the same deltas from k=4. I thought keeping track of the deltas was an efficient way to get accurate results. The convergence happened quicker than with Policy.
